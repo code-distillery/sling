@@ -18,25 +18,28 @@
  */
 package org.apache.sling.jcr.resource.internal;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import org.apache.sling.commons.classloader.DynamicClassLoaderManager;
+import org.osgi.framework.BundleContext;
+import org.osgi.util.tracker.ServiceTracker;
+
+import java.io.Closeable;
 
 /**
  * This is a helper class used to pass several services/data to the resource
  * and value map implementations.
  */
-public class HelperData {
-
-    private final AtomicReference<DynamicClassLoaderManager> dynamicClassLoaderManagerReference;
+public class HelperData implements Closeable {
 
     private volatile String[] namespacePrefixes;
 
-    public HelperData(final AtomicReference<DynamicClassLoaderManager> dynamicClassLoaderManagerReference) {
-        this.dynamicClassLoaderManagerReference = dynamicClassLoaderManagerReference;
+    private final ServiceTracker<DynamicClassLoaderManager, DynamicClassLoaderManager> dclmTracker;
+
+    public HelperData(final BundleContext bundleContext) {
+        this.dclmTracker = new ServiceTracker<>(bundleContext, DynamicClassLoaderManager.class, null);
+        this.dclmTracker.open();
     }
 
     public String[] getNamespacePrefixes(final Session session)
@@ -48,10 +51,15 @@ public class HelperData {
     }
 
     public ClassLoader getDynamicClassLoader() {
-        final DynamicClassLoaderManager dclm = this.dynamicClassLoaderManagerReference.get();
+        DynamicClassLoaderManager dclm = dclmTracker.getService();
         if ( dclm == null ) {
             return null;
         }
         return dclm.getDynamicClassLoader();
+    }
+
+    @Override
+    public void close() {
+        dclmTracker.close();
     }
 }

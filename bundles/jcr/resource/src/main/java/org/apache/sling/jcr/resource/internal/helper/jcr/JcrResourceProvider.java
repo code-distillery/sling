@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -46,9 +45,9 @@ import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.ResourceUtil;
-import org.apache.sling.commons.classloader.DynamicClassLoaderManager;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.apache.sling.jcr.resource.api.JcrResourceConstants;
+import org.apache.sling.jcr.resource.internal.HelperData;
 import org.apache.sling.jcr.resource.internal.JcrListenerBaseConfig;
 import org.apache.sling.jcr.resource.internal.JcrModifiableValueMap;
 import org.apache.sling.jcr.resource.internal.JcrResourceListener;
@@ -66,8 +65,6 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,7 +108,7 @@ public class JcrResourceProvider extends ResourceProvider<JcrProviderState> {
 
     private volatile JcrProviderStateFactory stateFactory;
 
-    private final AtomicReference<DynamicClassLoaderManager> classLoaderManagerReference = new AtomicReference<DynamicClassLoaderManager>();
+    private volatile HelperData helperData;
 
     @Activate
     protected void activate(final ComponentContext context) throws RepositoryException {
@@ -127,24 +124,14 @@ public class JcrResourceProvider extends ResourceProvider<JcrProviderState> {
 
         this.repository = repository;
 
-        this.stateFactory = new JcrProviderStateFactory(repositoryReference, repository,
-                classLoaderManagerReference);
+        this.helperData = new HelperData(context.getBundleContext());
+        this.stateFactory = new JcrProviderStateFactory(repositoryReference, repository, helperData);
     }
 
     @Deactivate
     protected void deactivate() {
         this.stateFactory = null;
-    }
-
-    @Reference(name = "dynamicClassLoaderManager",
-            service = DynamicClassLoaderManager.class,
-            cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-    protected void bindDynamicClassLoaderManager(final DynamicClassLoaderManager dynamicClassLoaderManager) {
-        this.classLoaderManagerReference.set(dynamicClassLoaderManager);
-    }
-
-    protected void unbindDynamicClassLoaderManager(final DynamicClassLoaderManager dynamicClassLoaderManager) {
-        this.classLoaderManagerReference.compareAndSet(dynamicClassLoaderManager, null);
+        this.helperData.close();
     }
 
     @Override
