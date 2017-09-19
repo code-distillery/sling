@@ -37,6 +37,10 @@ public class HelperData implements Closeable {
 
     private final ServiceTracker<DynamicClassLoaderManager, DynamicClassLoaderManager> dclmTracker;
 
+    HelperData() {
+        dclmTracker = null;
+    }
+
     public HelperData(final BundleContext bundleContext) {
         this.dclmTracker = new ServiceTracker<>(bundleContext, DynamicClassLoaderManager.class, null);
         this.dclmTracker.open();

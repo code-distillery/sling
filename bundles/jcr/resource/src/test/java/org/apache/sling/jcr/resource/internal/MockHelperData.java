@@ -16,22 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.jcr.resource.internal.helper.jcr;
+package org.apache.sling.jcr.resource.internal;
 
-import java.util.concurrent.atomic.AtomicReference;
+public class MockHelperData extends HelperData {
+    public static HelperData NULL = new MockHelperData();
 
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
+    private ClassLoader classLoader = null;
 
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.commons.classloader.DynamicClassLoaderManager;
-import org.apache.sling.jcr.resource.internal.HelperData;
-
-public class JcrTestNodeResource extends JcrNodeResource {
-
-    public JcrTestNodeResource(ResourceResolver resourceResolver, Node node,
-            ClassLoader dynamicClassLoader) throws RepositoryException {
-        super(resourceResolver, node.getPath(), null, node, new HelperData(new AtomicReference<DynamicClassLoaderManager>()));
+    public MockHelperData() {
+        super();
+    }
+    
+    @Override
+    public ClassLoader getDynamicClassLoader() {
+        return classLoader;
     }
 
+    @Override
+    public void close() { }
 }
